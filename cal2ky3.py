@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 """ Takes data from Calibre's database and puts it in KyBook 3's database.
     Rationale:
@@ -24,13 +24,18 @@ import hashlib
 import shutil
 from io import BytesIO
 # import ipdb
-import httplib
+import http.client
 from base64 import b64encode
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import mimetypes
 import re
 import tempfile
 from PIL import Image, ImageFile
+
+import urllib.request
+import urllib.parse
+
+import mechanize
 
 ImageFile.MAXBLOCK = 1048576
 
@@ -51,6 +56,7 @@ THUMB_WIDTH = 74
 THUMB_HEIGHT = 105
 EBOOK_SCHEMES = {'isbn': '10', 'amazon': '15', 'asin': '15', 'oclc': '12'}
 # ---------------------------------------------------------- #
+
 
 LOG = logging.getLogger(__name__)
 LOG_LEVELS = {'critical': logging.CRITICAL,
@@ -166,7 +172,7 @@ class Database(object):
             quoted_values = self.cursor.fetchone()
             for quoted_value in quoted_values:
                 saved_sql = re.sub(r'(VALUES\(|, | = | LIKE )\?',
-                                   r'\g<1>' + unicode(quoted_value),
+                                   r'\g<1>' + str(quoted_value),
                                    saved_sql, 1)
         LOG.debug(saved_sql)
         self.cursor.execute(sql, params or ())
@@ -237,12 +243,12 @@ class CalibreDB(Database):
             for cal_datum in self._cal_data:
                 # Make cal_data match what we get directly from Calibre's DB
                 # author_sort_map is a dict
-                cal_datum['authors'] = cal_datum['author_sort_map'].items()
+                cal_datum['authors'] = list(cal_datum['author_sort_map'].items())
                 # series is a string
                 cal_datum['sequences'] = [cal_datum['series']]
                 # tags are mapped directly to subjects
                 cal_datum['subjects'] = cal_datum['tags']
-                cal_datum['ebookids'] = cal_datum['identifiers'].items()
+                cal_datum['ebookids'] = list(cal_datum['identifiers'].items())
                 # We only want the 1st 2 (lc) letters of 1st language
                 if 'language' in cal_datum['languages']:
                     cal_datum['language'] = cal_datum['languages'][0][0:2].lower()
@@ -717,16 +723,19 @@ class ContentServer():
     def _http_conn(self, method, url, payload=None):
         LOG.debug(self._host)
         if payload:
-            params = urllib.urlencode(payload)
+            params = urllib.parse.urlencode(payload)
         else:
             params = None
         auth = '%s:%s' % (self._username, self._password)
-        credentials = b64encode(auth.encode('utf-8'))
+        
+        credentials = b64encode(auth.encode('ascii')).decode('ascii')
+        LOG.debug(f'Type: {type(credentials)}')
         headers = {'Authorization': 'Basic %s' % credentials}
-        http = httplib.HTTPConnection(self._host)
-        http.request(method, url, params, headers)
-        resp = http.getresponse()
-        http.close()
+        http_client = http.client.HTTPConnection(self._host)
+        LOG.debug(f'Sending request {method},{url},{params},{headers}')
+        http_client.request(method, url, params, headers)
+        resp = http_client.getresponse()
+        http_client.close()
         return resp
 
     def _post_multipart(self, url, fields, files, tries=5):
@@ -739,19 +748,20 @@ class ContentServer():
         headers = {'Authorization': 'Basic %s' % credentials}
         headers['Content-Type'] = content_type
         headers['Content-Length'] = str(len(body))
-        LOG.debug(headers)
+        LOG.debug(f'Headers:{headers}')
+        LOG.debug(self._host)
         try:
-            http = httplib.HTTPConnection(self._host, timeout=30)
+            http_client = http.client.HTTPConnection(self._host, timeout=30)
             # TODO: consider wrapping this in a thread with a timeout so we
             # don't get hangs
-            http.request('POST', str(url), body, headers)
-            resp = http.getresponse()
+            http_client.request('POST', str(url), body, headers)
+            resp = http_client.getresponse()
         except Exception as ex:
             LOG.debug(ex)
             time.sleep(1)
             return self._post_multipart(url, fields, files, tries - 1)
         finally:
-            http.close()
+            http_client.close()
         return resp
 
     def _encode_multipart_formdata(self, fields, files):
@@ -773,6 +783,7 @@ class ContentServer():
             lines.append(value)
         lines.append('--' + limit + '--')
         lines.append('')
+        #THIS CRASHES IN PYTHON3 DUE TO TYPE MISMATCH
         body = crlf.join(lines)
         content_type = 'multipart/form-data; boundary=%s' % limit
         return content_type, body
@@ -846,6 +857,7 @@ class ContentServer():
         """
         LOG.info('Downloading %s to %s', remote_file, local_file)
         resp = self._http_conn('GET', '/download?path=' + remote_file, None)
+        LOG.info("Download file")
         LOG.info(resp.reason)
         if resp.status == 200:
             with open(local_file, 'wb') as fyl:
@@ -878,6 +890,7 @@ class ContentServer():
                     LOG.debug('Failed!')
         LOG.info('Uploading %s to %s%s', local_file, remote_dir, remote_file)
         resp = self._post_multipart(url, data, files)
+        print('Done the request')
         if resp:
             LOG.info(resp.reason)
         else:
@@ -1022,7 +1035,7 @@ def parse_arguments():
     if len(sys.argv) < 5:
         sys.argv.append('-h')
     arguments = parser.parse_args()
-    for key, value in vars(arguments).items():
+    for key, value in list(vars(arguments).items()):
         LOG.info('arg: %s %s', key, value)
     return arguments
 
@@ -1030,23 +1043,35 @@ def parse_arguments():
 def main(library_path, content_server, username, password, remove_html,
          download_dir, log_level, filename, cal_data):
     """ Where the work is done."""
-    # Handle uncaught exceptions
-    sys.excepthook = handle_exception
+    
+    if not log_level:
+        log_level = 'debug'
+        #filename = os.path.join(tempfile.gettempdir(), 'KyBook3Sync.log')
+        filename = "/Users/ek/Documents/KyBook3 Sync/KyBook3Sync.log"
+    
+    setup_logging(log_level, filename)
+    
+    LOG.debug(f'{library_path}, {content_server}, {username}, {password}, {remove_html},\
+              {download_dir}, {log_level}, {filename}')
+    LOG.debug("Starting the log now")
+
     conn = None
     if cal_data:
         address = ('localhost', 26564)
-        conn = Client(address, authkey=bytes('8c5960e57151c4a6f9f524f3'))
-        if not log_level:
-            log_level = 'debug'
-            filename = os.path.join(tempfile.gettempdir(), 'KyBook3Sync.log')
-    setup_logging(log_level, filename)
-    # LOG.debug(library_path, content_server, username, password, remove_html,
-    #           download_dir, log_level, filename)
-    content_server = re.sub(r"https?://", '', content_server).rstrip('/')
+        conn = Client(address, authkey=b'8c5960e57151c4a6f9f524f3')
+        
+
+    # Handle uncaught exceptions
+    sys.excepthook = handle_exception
+
+    content_server = re.sub(r"http?://", '', content_server).rstrip('/')
+    
+    LOG.debug(f'Connecting to content server: {content_server}')
     try:
         c_s = ContentServer(content_server, username, password)
-    except Exception:
-        LOG.info('Could not connect to the Content Server. Did you start it?')
+    except Exception as e:
+        LOG.info(f'Could not connect to the Content Server {content_server}. Did you start it?')
+        print(e)
         conn.send('no c_s')
         return
     cal_db = CalibreDB(os.path.join(library_path, 'metadata.db'), cal_data)

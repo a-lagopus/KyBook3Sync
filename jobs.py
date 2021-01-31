@@ -115,7 +115,7 @@ def sync_threaded(gui, ids, db, log=None, abort=None, notifications=None):
         address = ('localhost', 26564)
         keep_running = True
         while keep_running:
-            listener = Listener(address, authkey=bytes('8c5960e57151c4a6f9f524f3'))
+            listener = Listener(address, authkey=b'8c5960e57151c4a6f9f524f3')
             conn = listener.accept()
             try:
                 while True:

@@ -78,9 +78,9 @@ class ConfigWidget(QWidget):
         layout.addWidget(self.html_checkbox, 10, 0, 1, 2)
 
     def save_settings(self):
-        prefs[KEY_CONTENT_SERVER] = unicode(self.c_s_ledit.text())
-        prefs[KEY_USERNAME] = unicode(self.username_ledit.text())
-        prefs[KEY_PASSWORD] = unicode(self.password_ledit.text())
-        formats = unicode(self.formats_ledit.text()).replace(' ','')
+        prefs[KEY_CONTENT_SERVER] = str(self.c_s_ledit.text())
+        prefs[KEY_USERNAME] = str(self.username_ledit.text())
+        prefs[KEY_PASSWORD] = str(self.password_ledit.text())
+        formats = str(self.formats_ledit.text()).replace(' ','')
         prefs[KEY_FORMATS] = formats.split(',')
         prefs[KEY_REMOVE_HTML] = self.html_checkbox.isChecked()
