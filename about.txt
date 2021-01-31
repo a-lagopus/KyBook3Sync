@@ -1,0 +1,7 @@
+KyBook3 Sync Plugin
+================
+
+Created by karl1c (karl1c@hotmail.com)
+
+Requires calibre >= 0.7.53
+

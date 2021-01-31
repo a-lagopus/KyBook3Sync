@@ -1,0 +1,45 @@
+[B]Version 1.0.11[/B] - 18 April 2019
+Corrected error when a book had no language assigned
+
+[B]Version 1.0.10[/B] - 10 April 2019
+Added syncing of series number (thanks to nimapourkarimi)
+Corrected error when no files of the required formats were found
+Removed setting ebookid fields to NULL in authors & sequences tables
+
+[B]Version 1.0.9[/B] - 08 April 2019
+Corrected error where /$User/covers was not created correctly from Windows (thanks to ilovejedd)
+
+[B]Version 1.0.8[/B] - 08 April 2019
+Now ONLY syncs formats specified in settings
+
+[B]Version 1.0.7[/B] - 07 April 2019
+Added syncing of rating
+Added syncing of some identifiers (isbn, amazon, asin, oclc)
+Corrected error in presentation of SQL in debug output
+
+[B]Version 1.0.6[/B] - 05 April 2019
+Added automatic logging when running as a plugin
+Improved robustness of file uploads
+
+[B]Version 1.0.5[/B] - 04 April 2019
+Added progress bar for uploading DB file
+Tidied up failure when Content Server on KyBook3 has not been started
+
+[B]Version 1.0.4[/B] - 03 April 2019
+Corrected creation of zip file (thanks to ilovejedd)
+Added dynamic setting of Calibre's library path (thanks to ilovejedd)
+Corrected error where some subjects appeared more than once in KyBook3
+
+[B]Version 1.0.3[/B] - 02 April 2019
+Added support for Windows paths
+Corrected error in syncing series (thanks to nimapourkarimi)
+
+[B]Version 1.0.2[/B] - 02 April 2019
+Added support for Calibre's GUI Debug mode
+Corrected filling lookups with NULL values
+
+[B]Version 1.0.1[/B] - 01 April 2019
+Changed port number and password for client/listener.
+
+[B]Version 1.0.0[/B] - 01 April 2019
+Initial release of KyBook3 Sync plugin

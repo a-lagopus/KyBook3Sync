@@ -1,0 +1,9 @@
+1. On your iOS device, open KyBook3
+2. In KyBook3, tap Control, tap Content Server, tap the Activate switch
+3. In this plugin, click Configure and enter the Link, Username, & Password from step 2
+4. In KyBook3, tap Library
+5. In this plugin, click Synchronize with KyBook3
+6. In KyBook3, tap Control, tap Cache, tap Clear space under BOOK COVERS CACHE
+7. Shutdown and restart KyBook3
+
+For more info, visit https://www.mobileread.com/forums/showthread.php?t=316347
