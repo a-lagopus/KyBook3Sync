@@ -32,11 +32,6 @@ import re
 import tempfile
 from PIL import Image, ImageFile
 
-import urllib.request
-import urllib.parse
-
-import mechanize
-
 ImageFile.MAXBLOCK = 1048576
 
 # ---------- Change these depending on your setup ---------- #
@@ -729,10 +724,8 @@ class ContentServer():
         auth = '%s:%s' % (self._username, self._password)
         
         credentials = b64encode(auth.encode('ascii')).decode('ascii')
-        LOG.debug(f'Type: {type(credentials)}')
         headers = {'Authorization': 'Basic %s' % credentials}
         http_client = http.client.HTTPConnection(self._host)
-        LOG.debug(f'Sending request {method},{url},{params},{headers}')
         http_client.request(method, url, params, headers)
         resp = http_client.getresponse()
         http_client.close()
@@ -743,12 +736,11 @@ class ContentServer():
         if tries == 0:
             return None
         auth = '%s:%s' % (self._username, self._password)
-        credentials = b64encode(auth.encode('utf-8'))
+        credentials = b64encode(auth.encode('ascii')).decode('ascii')
         content_type, body = self._encode_multipart_formdata(fields, files)
         headers = {'Authorization': 'Basic %s' % credentials}
         headers['Content-Type'] = content_type
         headers['Content-Length'] = str(len(body))
-        LOG.debug(f'Headers:{headers}')
         LOG.debug(self._host)
         try:
             http_client = http.client.HTTPConnection(self._host, timeout=30)
@@ -783,8 +775,14 @@ class ContentServer():
             lines.append(value)
         lines.append('--' + limit + '--')
         lines.append('')
-        #THIS CRASHES IN PYTHON3 DUE TO TYPE MISMATCH
-        body = crlf.join(lines)
+        
+        body = b''
+        for line in lines:
+            if isinstance(line,str):
+                body += line.encode('ascii') + b'\r\n'
+            else:
+                body += line + b'\r\n'
+
         content_type = 'multipart/form-data; boundary=%s' % limit
         return content_type, body
 
@@ -1046,8 +1044,7 @@ def main(library_path, content_server, username, password, remove_html,
     
     if not log_level:
         log_level = 'debug'
-        #filename = os.path.join(tempfile.gettempdir(), 'KyBook3Sync.log')
-        filename = "/Users/ek/Documents/KyBook3 Sync/KyBook3Sync.log"
+        filename = os.path.join(tempfile.gettempdir(), 'KyBook3Sync.log')
     
     setup_logging(log_level, filename)
     
