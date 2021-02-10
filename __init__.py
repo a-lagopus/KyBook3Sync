@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # vim:fileencoding=UTF-8:ts=4:sw=4:sta:et:sts=4:ai
 from __future__ import (unicode_literals, division, absolute_import,
                         print_function)
@@ -24,7 +24,7 @@ class KyBook3Sync(InterfaceActionBase):
     description         = 'Syncs books and metadata to KyBook3'
     supported_platforms = ['windows', 'osx', 'linux']
     author              = 'karl1c'
-    version             = (1, 0, 11)
+    version             = (1, 0, 12)
     minimum_calibre_version = (0, 7, 53)
 
     #: This field defines the GUI plugin class that contains all the code
@@ -76,5 +76,4 @@ class KyBook3Sync(InterfaceActionBase):
         ac = self.actual_plugin_
         if ac is not None:
             ac.apply_settings()
-
 

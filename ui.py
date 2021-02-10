@@ -30,6 +30,7 @@ class KyBook3SyncAction(InterfaceAction):
 
     def genesis(self):
         # This method is called once per plugin, do initial setup here
+    
 
         # Set the icon for this interface action
         # The get_icons function is a builtin function defined for all your
